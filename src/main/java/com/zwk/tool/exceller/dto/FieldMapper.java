@@ -36,13 +36,4 @@ public class FieldMapper {
     public void setField(Field field) {
         this.field = field;
     }
-
-    @Override
-    public String toString() {
-        return "FieldMapper{" +
-                "index=" + index +
-                ", fieldName='" + fieldName + '\'' +
-                ", field=" + field +
-                '}';
-    }
 }

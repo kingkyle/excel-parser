@@ -50,12 +50,34 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
                 T newInstance = type.getDeclaredConstructor().newInstance();
                 System.out.println("++++++++++++++++");
                 for (FieldMapper fieldMapper : fieldMappers) {
+                    Object object;
                     Cell cell = xssfSheet.getRow(i).getCell(fieldMapper.getIndex());
                     System.out.println(cell.getCellTypeEnum());
-                    fieldMapper.getField().setAccessible(true);
-                    fieldMapper.getField().set(newInstance, cell.getStringCellValue());
+                    switch (cell.getCellTypeEnum()) {
+                        case STRING:
+                        case FORMULA:
+                            object = cell.getStringCellValue();
+                            break;
+                        case NUMERIC:
+                            object = cell.getNumericCellValue();
+                            break;
+                        case BOOLEAN:
+                            object = cell.getBooleanCellValue();
+                            break;
+                        case _NONE:
+                        case BLANK:
+                        case ERROR:
+                            object = new String("");
+                        default:
+                            object = cell.getStringCellValue();
 
-                    Date date = new Date(123);
+                    }
+
+                    Field field = fieldMapper.getField();
+                    field.setAccessible(true);
+
+                    fieldMapper.getField().set(newInstance, object);
+
                 }
                 objects.add(newInstance);
             } catch (InvocationTargetException | IllegalAccessException | InstantiationException | NoSuchMethodException e) {
