@@ -1,4 +1,4 @@
-package com.zwk.tool.exceller;
+package com.zwk.tool.exceller.parser;
 
 import com.zwk.tool.exceller.service.UnmarshallerService;
 import com.zwk.tool.exceller.service.UnmarshallerServiceImpl;
@@ -7,9 +7,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.List;
 
-public class Exceller {
+public class ExcelParser {
 
-    private Exceller () {
+    private ExcelParser() {
 
     }
 
@@ -18,7 +18,7 @@ public class Exceller {
 
         UnmarshallerService unmarshallerService = new UnmarshallerServiceImpl();
         return unmarshallerService.fromExcel(inputStream, tClass);
-        
+
     }
 
 

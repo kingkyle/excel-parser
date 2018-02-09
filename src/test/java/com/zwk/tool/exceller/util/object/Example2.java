@@ -6,7 +6,8 @@ import com.zwk.tool.exceller.annotation.ExcelSheet;
 import java.util.Date;
 import java.util.Objects;
 
-public class Example {
+@ExcelSheet(index = 1)
+public class Example2 {
 
     @ExcelColumn("aa")
     private Date a;
@@ -14,11 +15,11 @@ public class Example {
     private int b;
     private String c;
 
-    public Example () {
+    public Example2() {
         super();
     }
 
-    public Example(Date a, int b, String c) {
+    public Example2(Date a, int b, String c) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -61,7 +62,7 @@ public class Example {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Example example = (Example) o;
+        Example2 example = (Example2) o;
         return b == example.b &&
                 Objects.equals(a, example.a) &&
                 Objects.equals(c, example.c);

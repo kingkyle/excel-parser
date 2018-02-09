@@ -1,7 +1,10 @@
 package com.zwk.tool.exceller.service;
 
-import com.zwk.tool.exceller.annotation.ExcelColumnName;
+import com.zwk.tool.exceller.annotation.ExcelColumn;
+import com.zwk.tool.exceller.annotation.ExcelSheet;
+import com.zwk.tool.exceller.annotation.ExcelTable;
 import com.zwk.tool.exceller.dto.FieldMapper;
+import com.zwk.tool.exceller.util.ExcelUtil;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -9,7 +12,6 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -26,13 +28,20 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
     @Override
     public <T> List<T> fromExcel (InputStream inputStream, Class<T> type) throws Exception {
-        List<T> objects = new ArrayList<>();
-        XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
-        XSSFSheet xssfSheet = workbook.getSheetAt(0);
 
-        List<FieldMapper> fieldMappers = createFieldMapper(type.getDeclaredFields());
+        XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
+        XSSFSheet xssfSheet = getSheet(workbook, type);
+        return fromExcel(xssfSheet, type);
+
+    }
+
+    @Override
+    public <T> List<T> fromExcel (XSSFSheet xssfSheet, Class<T> type) throws Exception {
+        List<FieldMapper> fieldMappers = createFieldMapper(type);
 
         findColumnNumberOfFields(fieldMappers, xssfSheet.getRow(0));
+
+        List<T> objects = new ArrayList<>();
 
         for (int i = 1; i < xssfSheet.getPhysicalNumberOfRows(); i++) {
             try {
@@ -88,14 +97,16 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
     /**
      *
-     * @param fields
+     * @param type
+     * @param <T>
      * @return
      */
-    private List<FieldMapper> createFieldMapper (Field [] fields) {
+    private <T> List<FieldMapper> createFieldMapper (Class<T> type) {
+        Field [] fields = type.getDeclaredFields();
         List<FieldMapper> fieldMappers = new ArrayList<>();
         for (Field field : fields) {
-            String fieldName = field.getAnnotation(ExcelColumnName.class) != null
-                    ? field.getAnnotation(ExcelColumnName.class).value() : field.getName();
+            String fieldName = field.getAnnotation(ExcelColumn.class) != null
+                    ? field.getAnnotation(ExcelColumn.class).value() : field.getName();
             FieldMapper fieldMapper = new FieldMapper(fieldName, field);
             fieldMappers.add(fieldMapper);
         }
@@ -130,5 +141,20 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
         if(counter > 0) {
             throw new Exception("value not found");
         }
+    }
+
+    private <T> XSSFSheet getSheet (XSSFWorkbook xssfWorkbook, Class<T> type) throws Exception{
+        ExcelSheet excelSheet = type.getAnnotation(ExcelSheet.class);
+        if(excelSheet == null)
+            return ExcelUtil.getExcelSheetByIndex(xssfWorkbook, 0);
+        else if(!"".equalsIgnoreCase(excelSheet.name()))
+            return ExcelUtil.getExcelSheetByName(xssfWorkbook, excelSheet.name());
+        else
+            return ExcelUtil.getExcelSheetByIndex(xssfWorkbook, excelSheet.index());
+    }
+
+    private <T> String getTableName (Class<T> type) {
+        return type.getAnnotation(ExcelTable.class) != null ?
+                type.getAnnotation(ExcelTable.class).value() : "";
     }
 }
