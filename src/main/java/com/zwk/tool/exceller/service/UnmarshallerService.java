@@ -1,17 +1,16 @@
 package com.zwk.tool.exceller.service;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 public interface UnmarshallerService {
 
     /**
      * Unmarshall excel file to expected object
-     * @param fileInputStream
+     * @param inputStream
      * @param type
      * @param <T>
      * @return
      */
-    public <T> List<T> fromExcel (FileInputStream fileInputStream, Class<T> type) throws Exception;
+    public <T> List<T> fromExcel (InputStream inputStream, Class<T> type) throws Exception;
 }
