@@ -3,10 +3,7 @@ package com.zwk.tool.exceller.unit;
 import com.zwk.tool.exceller.service.UnmarshallerService;
 import com.zwk.tool.exceller.service.UnmarshallerServiceImpl;
 import com.zwk.tool.exceller.util.Fixture;
-import com.zwk.tool.exceller.util.object.Example;
-import com.zwk.tool.exceller.util.object.Example2;
-import com.zwk.tool.exceller.util.object.Example3;
-import com.zwk.tool.exceller.util.object.Example4;
+import com.zwk.tool.exceller.util.object.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,6 +18,7 @@ public class UnmarshallerServiceImplTest {
     private static final List<Example2> expectedExample2s;
     private static final List<Example3> expectedExample3s;
     private static final List<Example4> expectedExample4s;
+    private static final List<Example5> expectedExample5s;
 
     static {
         Example example1 = new Example(new Date(2017-1900, 7, 11), 2, "1.25");
@@ -38,6 +36,10 @@ public class UnmarshallerServiceImplTest {
         Example4 example41 = new Example4(new Date(2017-1900, 7, 11), 2, "1.25");
         Example4 example42 = new Example4(new Date(2017-1900, 10, 11, 2, 52, 48), 1, "43050.12");
         expectedExample4s = Arrays.asList(example41, example42);
+
+        Example5 example51 = new Example5(new Date(2017-1900, 7, 11), 2, "1.25");
+        Example5 example52 = new Example5(new Date(2017-1900, 10, 11, 2, 52, 48), 1, "43050.12");
+        expectedExample5s = Arrays.asList(example51, example52);
     }
 
     @Test
@@ -89,6 +91,19 @@ public class UnmarshallerServiceImplTest {
 
 
         Assert.assertEquals(expectedExample4s, examples);
+
+    }
+
+    @Test
+    public void fromExcelWithExcelTableNameAnnotationSuccess () throws Exception {
+
+        InputStream file = Fixture.getFile("excel/test2.xlsx");
+
+        UnmarshallerService unmarshallerService = new UnmarshallerServiceImpl();
+        List<Example5> examples = unmarshallerService.fromExcel(file, Example5.class);
+
+
+        Assert.assertEquals(expectedExample5s, examples);
 
     }
 }

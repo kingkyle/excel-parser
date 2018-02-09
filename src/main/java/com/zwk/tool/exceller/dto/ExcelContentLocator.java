@@ -1,11 +1,18 @@
 package com.zwk.tool.exceller.dto;
 
-public class ExcelTable {
+public class ExcelContentLocator {
 
     private int startRow;
     private int startCol;
     private int numberOfRows;
     private int numberOfColumns;
+
+    public ExcelContentLocator(int startRow, int startCol, int numberOfRows, int numberOfColumns) {
+        this.startRow = startRow;
+        this.startCol = startCol;
+        this.numberOfRows = numberOfRows;
+        this.numberOfColumns = numberOfColumns;
+    }
 
     public int getStartRow() {
         return startRow;
@@ -37,5 +44,15 @@ public class ExcelTable {
 
     public void setNumberOfColumns(int numberOfColumns) {
         this.numberOfColumns = numberOfColumns;
+    }
+
+    @Override
+    public String toString() {
+        return "ExcelContentLocator{" +
+                "startRow=" + startRow +
+                ", startCol=" + startCol +
+                ", numberOfRows=" + numberOfRows +
+                ", numberOfColumns=" + numberOfColumns +
+                '}';
     }
 }
