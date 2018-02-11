@@ -4,14 +4,14 @@ public class ExcelContentLocator {
 
     private int startRow;
     private int startCol;
-    private int numberOfRows;
-    private int numberOfColumns;
+    private int endRow;
+    private int endCol;
 
-    public ExcelContentLocator(int startRow, int startCol, int numberOfRows, int numberOfColumns) {
+    public ExcelContentLocator(int startRow, int startCol, int endRow, int endCol) {
         this.startRow = startRow;
         this.startCol = startCol;
-        this.numberOfRows = numberOfRows;
-        this.numberOfColumns = numberOfColumns;
+        this.endRow = endRow;
+        this.endCol = endCol;
     }
 
     public int getStartRow() {
@@ -30,20 +30,20 @@ public class ExcelContentLocator {
         this.startCol = startCol;
     }
 
-    public int getNumberOfRows() {
-        return numberOfRows;
+    public int getEndRow() {
+        return endRow;
     }
 
-    public void setNumberOfRows(int numberOfRows) {
-        this.numberOfRows = numberOfRows;
+    public void setEndRow(int endRow) {
+        this.endRow = endRow;
     }
 
-    public int getNumberOfColumns() {
-        return numberOfColumns;
+    public int getEndCol() {
+        return endCol;
     }
 
-    public void setNumberOfColumns(int numberOfColumns) {
-        this.numberOfColumns = numberOfColumns;
+    public void setEndCol(int endCol) {
+        this.endCol = endCol;
     }
 
     @Override
@@ -51,8 +51,8 @@ public class ExcelContentLocator {
         return "ExcelContentLocator{" +
                 "startRow=" + startRow +
                 ", startCol=" + startCol +
-                ", numberOfRows=" + numberOfRows +
-                ", numberOfColumns=" + numberOfColumns +
+                ", endRow=" + endRow +
+                ", endCol=" + endCol +
                 '}';
     }
 }

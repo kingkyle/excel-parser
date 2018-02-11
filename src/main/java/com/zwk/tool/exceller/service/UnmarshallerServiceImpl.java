@@ -65,7 +65,7 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
         List<T> objects = new ArrayList<>();
 
-        for (int i = locator.getStartRow() + 1; i < locator.getStartRow() + locator.getNumberOfRows(); i++) {
+        for (int i = locator.getStartRow() + 1; i <= locator.getEndRow(); i++) {
             try {
                 T newInstance = type.getDeclaredConstructor().newInstance();
                 System.out.println("++++++++++++++++");
@@ -78,8 +78,6 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
                     Field field = fieldMapper.getField();
                     field.setAccessible(true);
-                    System.out.println(field.getType().getName());
-                    //TODO: more types
                     if("java.lang.String".equalsIgnoreCase(field.getType().getName()))
                         object = cellValue;
                     else if("java.util.Date".equalsIgnoreCase(field.getType().getName())) {
@@ -145,11 +143,11 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
     private void findColumnNumberOfFields (List<FieldMapper> fieldMappers, XSSFSheet xssfSheet, ExcelContentLocator locator) throws Exception{
         int counter = fieldMappers.size();
         System.out.println(locator);
-        if(locator.getNumberOfColumns() < counter)
+        int numberOfColumns = locator.getEndCol() - locator.getStartCol() + 1;
+        if(numberOfColumns < counter)
             throw new Exception("Expected fields number is greater than what's in the table");
 
-        for (int i = locator.getStartCol(); i <= locator.getStartCol() + locator.getNumberOfColumns(); i ++) {
-            System.out.println("+++++++++++++" + i);
+        for (int i = locator.getStartCol(); i <= locator.getEndCol(); i ++) {
             Cell cell = xssfSheet.getRow(locator.getStartRow()).getCell(i);
             for (FieldMapper fieldMapper : fieldMappers) {
                 if (fieldMapper.getFieldName().equalsIgnoreCase(cell.getStringCellValue())) {
@@ -158,7 +156,6 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
                 }
 
             }
-            System.out.println("--------------" + counter);
             if (counter == 0)
                 return;
         }
@@ -185,8 +182,8 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
         String tableName = getTableName(type);
         if (StringUtils.isBlank(tableName))
             return new ExcelContentLocator(0, 0,
-                    xssfSheet.getPhysicalNumberOfRows(),
-                    xssfSheet.getRow(0).getPhysicalNumberOfCells());
+                    xssfSheet.getPhysicalNumberOfRows() - 1,
+                    xssfSheet.getRow(0).getPhysicalNumberOfCells() - 1);
         List<XSSFTable> tables = xssfSheet.getTables();
         if (tables == null || tables.size() < 1)
             throw new Exception("No table present in the excel sheet");
@@ -199,7 +196,6 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
     private ExcelContentLocator getLocation (XSSFTable xssfTable) {
         return new ExcelContentLocator(xssfTable.getStartRowIndex(), xssfTable.getStartColIndex(),
-                xssfTable.getEndRowIndex() - xssfTable.getStartRowIndex() + 1,
-                xssfTable.getEndColIndex() - xssfTable.getStartColIndex() + 1);
+                xssfTable.getEndRowIndex(), xssfTable.getEndColIndex());
     }
 }
