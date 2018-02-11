@@ -1,15 +1,20 @@
 package com.zwk.tool.exceller.service;
 
-import com.zwk.tool.exceller.annotation.ExcelColumnName;
+import com.zwk.tool.exceller.annotation.ExcelColumn;
+import com.zwk.tool.exceller.annotation.ExcelSheet;
+import com.zwk.tool.exceller.annotation.ExcelTable;
+import com.zwk.tool.exceller.dto.ExcelContentLocator;
 import com.zwk.tool.exceller.dto.FieldMapper;
+import com.zwk.tool.exceller.util.ExcelUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFTable;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -24,17 +29,43 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
     private final DataFormatter dataFormatter = new DataFormatter();
     private final SimpleDateFormat defaultDateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
+    /**
+     * Read excel file from input stream and get list of objects.
+     * @param inputStream
+     * @param type
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
     @Override
     public <T> List<T> fromExcel (InputStream inputStream, Class<T> type) throws Exception {
-        List<T> objects = new ArrayList<>();
+
         XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
-        XSSFSheet xssfSheet = workbook.getSheetAt(0);
+        XSSFSheet xssfSheet = getSheet(workbook, type);
+        return fromExcel(xssfSheet, type);
 
-        List<FieldMapper> fieldMappers = createFieldMapper(type.getDeclaredFields());
+    }
 
-        findColumnNumberOfFields(fieldMappers, xssfSheet.getRow(0));
+    /**
+     * Read excel sheet and create list of objects
+     * @param xssfSheet
+     * @param type
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public <T> List<T> fromExcel (XSSFSheet xssfSheet, Class<T> type) throws Exception {
+        List<FieldMapper> fieldMappers = createFieldMapper(type);
 
-        for (int i = 1; i < xssfSheet.getPhysicalNumberOfRows(); i++) {
+        ExcelContentLocator locator = getContentLocation(xssfSheet, type);
+
+
+        findColumnNumberOfFields(fieldMappers, xssfSheet, locator);
+
+        List<T> objects = new ArrayList<>();
+
+        for (int i = locator.getStartRow() + 1; i <= locator.getEndRow(); i++) {
             try {
                 T newInstance = type.getDeclaredConstructor().newInstance();
                 System.out.println("++++++++++++++++");
@@ -47,8 +78,6 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
                     Field field = fieldMapper.getField();
                     field.setAccessible(true);
-                    System.out.println(field.getType().getName());
-                    //TODO: more types
                     if("java.lang.String".equalsIgnoreCase(field.getType().getName()))
                         object = cellValue;
                     else if("java.util.Date".equalsIgnoreCase(field.getType().getName())) {
@@ -88,14 +117,16 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
 
     /**
      *
-     * @param fields
+     * @param type
+     * @param <T>
      * @return
      */
-    private List<FieldMapper> createFieldMapper (Field [] fields) {
+    private <T> List<FieldMapper> createFieldMapper (Class<T> type) {
+        Field [] fields = type.getDeclaredFields();
         List<FieldMapper> fieldMappers = new ArrayList<>();
         for (Field field : fields) {
-            String fieldName = field.getAnnotation(ExcelColumnName.class) != null
-                    ? field.getAnnotation(ExcelColumnName.class).value() : field.getName();
+            String fieldName = field.getAnnotation(ExcelColumn.class) != null
+                    ? field.getAnnotation(ExcelColumn.class).value() : field.getName();
             FieldMapper fieldMapper = new FieldMapper(fieldName, field);
             fieldMappers.add(fieldMapper);
         }
@@ -106,18 +137,18 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
     /**
      *
      * @param fieldMappers
-     * @param xssfRow
+     * @param locator
      * @throws Exception
      */
-    private void findColumnNumberOfFields (List<FieldMapper> fieldMappers, XSSFRow xssfRow) throws Exception{
+    private void findColumnNumberOfFields (List<FieldMapper> fieldMappers, XSSFSheet xssfSheet, ExcelContentLocator locator) throws Exception{
         int counter = fieldMappers.size();
-        System.out.println("count: " + counter);
-        if(xssfRow.getPhysicalNumberOfCells() < counter)
+        System.out.println(locator);
+        int numberOfColumns = locator.getEndCol() - locator.getStartCol() + 1;
+        if(numberOfColumns < counter)
             throw new Exception("Expected fields number is greater than what's in the table");
 
-        Iterator<Cell> cellIterator = xssfRow.cellIterator();
-        while (cellIterator.hasNext() && counter > 0) {
-            Cell cell = cellIterator.next();
+        for (int i = locator.getStartCol(); i <= locator.getEndCol(); i ++) {
+            Cell cell = xssfSheet.getRow(locator.getStartRow()).getCell(i);
             for (FieldMapper fieldMapper : fieldMappers) {
                 if (fieldMapper.getFieldName().equalsIgnoreCase(cell.getStringCellValue())) {
                     fieldMapper.setIndex(cell.getColumnIndex());
@@ -125,10 +156,46 @@ public class UnmarshallerServiceImpl implements UnmarshallerService {
                 }
 
             }
+            if (counter == 0)
+                return;
         }
         //TODO: check if counter is greater than 0
-        if(counter > 0) {
-            throw new Exception("value not found");
+        throw new Exception("value not found");
+    }
+
+    private <T> XSSFSheet getSheet (XSSFWorkbook xssfWorkbook, Class<T> type) throws Exception{
+        ExcelSheet excelSheet = type.getAnnotation(ExcelSheet.class);
+        if(excelSheet == null)
+            return ExcelUtil.getExcelSheetByIndex(xssfWorkbook, 0);
+        else if(StringUtils.isNotBlank(excelSheet.name()))
+            return ExcelUtil.getExcelSheetByName(xssfWorkbook, excelSheet.name());
+        else
+            return ExcelUtil.getExcelSheetByIndex(xssfWorkbook, excelSheet.index());
+    }
+
+    private <T> String getTableName (Class<T> type) {
+        return type.getAnnotation(ExcelTable.class) != null ?
+                type.getAnnotation(ExcelTable.class).value() : "";
+    }
+
+    private <T> ExcelContentLocator getContentLocation (XSSFSheet xssfSheet, Class<T> type) throws Exception {
+        String tableName = getTableName(type);
+        if (StringUtils.isBlank(tableName))
+            return new ExcelContentLocator(0, 0,
+                    xssfSheet.getPhysicalNumberOfRows() - 1,
+                    xssfSheet.getRow(0).getPhysicalNumberOfCells() - 1);
+        List<XSSFTable> tables = xssfSheet.getTables();
+        if (tables == null || tables.size() < 1)
+            throw new Exception("No table present in the excel sheet");
+        for (XSSFTable xssfTable : tables) {
+            if (xssfTable.getName().equalsIgnoreCase(tableName))
+                return getLocation(xssfTable);
         }
+        throw new Exception("Table not found");
+    }
+
+    private ExcelContentLocator getLocation (XSSFTable xssfTable) {
+        return new ExcelContentLocator(xssfTable.getStartRowIndex(), xssfTable.getStartColIndex(),
+                xssfTable.getEndRowIndex(), xssfTable.getEndColIndex());
     }
 }

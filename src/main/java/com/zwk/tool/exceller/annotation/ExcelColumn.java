@@ -1,10 +1,14 @@
 package com.zwk.tool.exceller.annotation;
 
+
 import java.lang.annotation.*;
 
+/**
+ *
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
+@Target({ElementType.FIELD})
 @Documented
-public @interface ExcelTableName {
+public @interface ExcelColumn {
     String value();
 }
